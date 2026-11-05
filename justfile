@@ -226,7 +226,13 @@ _views:
         v="$v DROP VIEW IF EXISTS $t;"
       fi
     done
-    {{duckdb}} "{{db}}" -c "$v"
+    # Copilot marts (sql/copilot_marts.sql) bind copilot-only tool_calls columns.
+    if find "{{lake}}/tool_calls" -path '*runtime=copilot*' -name '*.parquet' -print -quit 2>/dev/null | grep -q .; then
+      v="$v SET VARIABLE lake='{{lake}}';"
+      {{duckdb}} "{{db}}" -c "$v" -f "{{repo}}/sql/copilot_marts.sql"
+    else
+      {{duckdb}} "{{db}}" -c "$v DROP VIEW IF EXISTS abap_attempts;"
+    fi
 
 # W7 correction mining. Rebuilds correction_candidates (four detectors, precision-first),
 # operator_messages (G-recall-floor denominator: metadata-only, flagged = also a candidate
@@ -496,6 +502,15 @@ test:
       FROM seq WHERE prev_err IS NOT NULL;")"
     if [ "$retries" != "1 1" ]; then
       echo "FAIL: copilot mcp retries = '$retries', want '1 1'" >&2
+      exit 1
+    fi
+    # copilot fix loop: 3 WriteSource attempts on ZCL_DEMO -- syntax error, the SAME
+    # defective source again, then a clean write. Expect outcomes/flags exactly.
+    loop="$(just sql -noheader -list -c "SELECT string_agg(outcome || ':' || resubmitted_defective || ':' || fail_streak, ',' ORDER BY attempt_no) FROM abap_attempts WHERE object='ZCL_DEMO';")"
+    if [ "$loop" != "syntax_error:false:2,syntax_error:true:2,ok:false:0" ]; then
+      echo "FAIL: abap_attempts ZCL_DEMO loop = '$loop'" >&2
+      exit 1
+    fi
       exit 1
     fi
     # session-copy.jsonl repeats lines of session.jsonl under a later-starting,
