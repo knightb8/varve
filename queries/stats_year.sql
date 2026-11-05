@@ -24,7 +24,7 @@
 --   best streak = the longest run of consecutive active days inside the window.
 --   level       = heatmap intensity of an active day: 1..4 by the `metric` value
 --                 against its quartiles over the window's active days; 0 if inactive.
--- PARAMETERS: year (default: the year of `today`), runtime claude|pi|opencode|all
+-- PARAMETERS: year (default: the year of `today`), runtime claude|pi|opencode|copilot|antigravity|vibe|all
 --   (default all), metric prompts|steps|tokens (default prompts), today (default
 --   current_date). Local time is the DuckDB TimeZone setting (from TZ).
 -- CAVEATS: Claude Code and pi timestamps are UTC in the lake; opencode timestamps are
@@ -86,7 +86,7 @@ UNION ALL
 SELECT runtime, stats_local_day(runtime, started_at), unnest(['tool_result', 'tool_error']),
        unnest([1, (decision IS NOT DISTINCT FROM 'error')::int])
 FROM tool_calls
-WHERE runtime = 'pi' OR (runtime = 'opencode' AND decision IN ('completed', 'error'))
+WHERE runtime = 'pi' OR (runtime IN ('opencode', 'copilot', 'antigravity', 'vibe') AND decision IN ('completed', 'error'))
 UNION ALL
 SELECT runtime, min(day), unnest(['tool_result', 'tool_error']), unnest([1, max(is_error)::int])
 FROM (

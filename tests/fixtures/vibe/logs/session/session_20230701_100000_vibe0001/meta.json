@@ -1,0 +1,22 @@
+{
+  "session_id": "vibe-session-1",
+  "parent_session_id": null,
+  "start_time": "2023-07-01T10:00:00.000000+00:00",
+  "end_time": "2023-07-01T10:00:30.000000+00:00",
+  "environment": {
+    "working_directory": "/home/me/github.com/acme/vibe-demo"
+  },
+  "config": {
+    "active_model": "mistral-medium-3.5"
+  },
+  "stats": {
+    "steps": 3,
+    "session_prompt_tokens": 2000,
+    "session_completion_tokens": 400,
+    "tool_calls_agreed": 1,
+    "tool_calls_rejected": 1,
+    "tool_calls_failed": 1,
+    "tool_calls_succeeded": 1,
+    "session_cost": 0.006
+  }
+}
