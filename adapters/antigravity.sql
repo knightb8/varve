@@ -103,10 +103,12 @@ WITH base AS (
     max(nullif(regexp_extract(content, 'sender=([0-9a-zA-Z_-]+)', 1), ''))
       FILTER (WHERE step_index = 0 AND source = 'SYSTEM') AS parent_session_id,
     coalesce(
-      max(nullif(trim(regexp_extract(content, 'Command Working Directory:\s*([^\r\n<]+)', 1)), '')),
-      max(nullif(trim(regexp_extract(content, '"workspaceUris":\s*\[\s*"file://([^"\\]+)', 1)), '')),
+      max(nullif(trim(regexp_extract(content, 'Command Working Directory:[ \t]*([^\r\n<]+)', 1)), '')),
+      max(nullif(trim(regexp_extract(content, '"workspaceUris":[ \t\r\n]*\[[ \t\r\n]*"file://([^"\\]+)', 1)), '')),
       max(nullif(regexp_extract(coalesce(tool_calls::varchar, '') || ' ' || coalesce(content, ''),
         '(/(?:var/home|home|Users|workspaces|workspace)/[^"''\s<>\\]+/(?:gitlab\.com|github\.com)/[^/"''\s<>\\]+/[^/"''\s<>\\]+)', 1), '')),
+      max(nullif(regexp_extract(coalesce(tool_calls::varchar, '') || ' ' || coalesce(content, ''),
+        '((?:/var)?/home/[^/"''\s<>]+/[^/"''\s<>]+/[^/"''\s<>]+)', 1), '')),
       max(nullif(regexp_extract(coalesce(tool_calls::varchar, ''),
         '"(?:Path|DirectoryPath)"\s*:\s*"\\"?(/[^"\\]+/[^/"\\]+)', 1), ''))
     ) AS cwd

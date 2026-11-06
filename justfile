@@ -58,10 +58,10 @@ copilot_root   := env_var_or_default("VARVE_COPILOT_ROOT", env_var("HOME") + "/.
 copilot_events := copilot_root + "/session-state/*/events.jsonl"
 copilot_db     := copilot_root + "/session-store.db"
 copilot_state  := copilot_root + "/session-state"
-# Google Antigravity CLI: per-conversation JSONL transcripts under
+# Google Antigravity (CLI / IDE / Desktop): per-conversation JSONL transcripts under
 # brain/<session_id>/.system_generated/logs/{transcript,transcript_full}.jsonl.
-agy_root   := env_var_or_default("VARVE_AGY_ROOT", env_var("HOME") + "/.gemini/antigravity-cli")
-agy_source := agy_root + "/brain/*/.system_generated/logs/transcript*.jsonl"
+agy_root   := env_var_or_default("VARVE_AGY_ROOT", env_var("HOME") + "/.gemini")
+agy_source := agy_root + "/**/brain/*/.system_generated/logs/transcript*.jsonl"
 # Mistral Vibe CLI: per-session directories under logs/session/session_*/ containing
 # meta.json and messages.jsonl.
 vibe_root     := env_var_or_default("VARVE_VIBE_ROOT", env_var("HOME") + "/.vibe")
@@ -190,12 +190,12 @@ _pipeline mode:
     else
       echo "varve: skip copilot -- no events.jsonl under {{copilot_root}}/session-state" >&2
     fi
-    # ---- Google Antigravity CLI (transcript.jsonl / transcript_full.jsonl glob) ----
-    if [ -d "{{agy_root}}/brain" ] && find "{{agy_root}}/brain" -name 'transcript*.jsonl' -type f -print -quit | grep -q .; then
-      find "{{agy_root}}/brain" -name 'transcript*.jsonl' -type f -exec stat "${stat_fmt[@]}" {} + >> "$inv"
+    # ---- Google Antigravity (CLI / IDE / Desktop transcript*.jsonl glob) ----
+    if [ -d "{{agy_root}}" ] && find "{{agy_root}}" -path '*/brain/*/.system_generated/logs/transcript*.jsonl' -type f -print -quit 2>/dev/null | grep -q .; then
+      find "{{agy_root}}" -path '*/brain/*/.system_generated/logs/transcript*.jsonl' -type f -exec stat "${stat_fmt[@]}" {} + >> "$inv" 2>/dev/null || true
       adapters+=(-f "{{repo}}/adapters/antigravity.sql")
     else
-      echo "varve: skip antigravity -- no transcripts at {{agy_root}}/brain" >&2
+      echo "varve: skip antigravity -- no transcripts at {{agy_root}}" >&2
     fi
     # ---- Mistral Vibe CLI (session_*/meta.json + messages.jsonl) ----
     if [ -d "{{vibe_root}}/logs/session" ] && find "{{vibe_root}}/logs/session" -name 'meta.json' -type f -print -quit | grep -q . && find "{{vibe_root}}/logs/session" -name 'messages.jsonl' -type f -print -quit | grep -q .; then
