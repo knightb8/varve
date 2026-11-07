@@ -140,6 +140,16 @@ _pipeline mode:
           cp -c "{{opencode_db}}$ext" "$oc_snap/opencode.db$ext" 2>/dev/null || cp "{{opencode_db}}$ext" "$oc_snap/opencode.db$ext"
         fi
       done
+      # Defensive fallback for historical/partial stores: ensure both v1 and v2 contract tables
+      # exist in the disposable clone before ATTACH READ_ONLY.
+      if command -v sqlite3 >/dev/null 2>&1; then
+        sqlite3 "$oc_snap/opencode.db" \
+          "CREATE TABLE IF NOT EXISTS session (id TEXT PRIMARY KEY, parent_id TEXT, directory TEXT, version TEXT, agent TEXT, model TEXT, time_created INTEGER);" \
+          "CREATE TABLE IF NOT EXISTS session_v2 (id TEXT PRIMARY KEY, parent_id TEXT, directory TEXT, version TEXT, agent TEXT, model TEXT, time_created INTEGER);" \
+          "CREATE TABLE IF NOT EXISTS message (id TEXT PRIMARY KEY, session_id TEXT, time_created INTEGER, data TEXT);" \
+          "CREATE TABLE IF NOT EXISTS session_message (id TEXT PRIMARY KEY, session_id TEXT, type TEXT, time_created INTEGER, data TEXT);" \
+          "CREATE TABLE IF NOT EXISTS part (id TEXT PRIMARY KEY, message_id TEXT, session_id TEXT, time_created INTEGER, data TEXT);" 2>/dev/null || true
+      fi
       # ATTACH needs a literal path (no getvariable), so inject it here where the
       # snapshot path is known -- before opencode.sql, after the CC adapter.
       adapters+=(-c "INSTALL sqlite; LOAD sqlite; ATTACH '$oc_snap/opencode.db' AS oc (TYPE sqlite, READ_ONLY);" -f "{{repo}}/adapters/opencode.sql")
@@ -397,6 +407,13 @@ test:
         exit 1
       fi
     done
+    v1_n="$(just sql -noheader -list -c "SELECT count(*) FROM sessions WHERE session_id='oc-session-1';")"
+    v2_n="$(just sql -noheader -list -c "SELECT count(*) FROM sessions WHERE session_id='oc-session-v2';")"
+    v2_tools="$(just sql -noheader -list -c "SELECT count(*) FROM tool_calls WHERE session_id='oc-session-v2';")"
+    if [ "${v1_n:-0}" -ne 1 ] || [ "${v2_n:-0}" -ne 1 ] || [ "${v2_tools:-0}" -ne 1 ]; then
+      echo "FAIL: opencode v1/v2 session or tool assertion failed: v1=$v1_n, v2=$v2_n, v2_tools=$v2_tools" >&2
+      exit 1
+    fi
     cand="$(just sql -noheader -list -c "SELECT count(*) FROM correction_candidates;")"
     if [ "${cand:-0}" -lt 1 ]; then
       echo "FAIL: correction_candidates is empty -- the fixture no longer trips" >&2
