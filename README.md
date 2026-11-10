@@ -2,6 +2,9 @@
 
 # varve
 
+> [!NOTE]
+> **Fork Notice**: Do not clone or use this fork as a divergent codebase. Following upstream Varve's modular architecture redesign, the core engine remains pristine at [andrewdunndev/varve](https://github.com/andrewdunndev/varve) (canonical at [dunn.dev/varve](https://gitlab.com/dunn.dev/varve)). Use upstream Varve as the core lake engine combined with the standalone companion extensions repository: [**varve-coviant-extensions**](https://github.com/knightb8/varve-coviant-extensions), which provides plug-and-play runtime adapters (Google Antigravity, Mistral Vibe, GitHub Copilot, OpenCode dual-schema v1+v2) and operator tools designed to load via `$VARVE_DATA/adapters/` with zero core modifications.
+
 [![pipeline](https://gitlab.com/dunn.dev/varve/badges/main/pipeline.svg)](https://gitlab.com/dunn.dev/varve/-/pipelines)
 [![license](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 ![built with GitLab](https://img.shields.io/badge/built_with-GitLab-FC6D26?logo=gitlab)
